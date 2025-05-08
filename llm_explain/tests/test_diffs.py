@@ -1,5 +1,5 @@
 from llm_explain.models.diff import explain_diff, ExplainDiffResult, KSparseRegression
-from data.samples import get_generic_examples, get_goal_driven_examples
+from data.samples import get_goal_driven_examples
 import numpy as np
 
 debug_case_no_detail = {
@@ -18,24 +18,17 @@ debug_case_with_detail = {
     "proposer_detailed": True,
 }
 
-airline_toy_example = {
-    **get_generic_examples(seed=42),
-    "proposer_num_rounds": 3,
-    "proposer_num_explanations_per_round": 5,
-    "proposer_detailed": True,
-}
-
 airline_goal_driven_toy_example = {
     **get_goal_driven_examples(seed=42),
-    "proposer_num_rounds": 3,
-    "proposer_num_explanations_per_round": 5,
+    "proposer_num_rounds": 5,
+    "proposer_num_explanations_per_round": 3,
     "proposer_detailed": True,
 }
 
 airline_goal_driven_toy_example_no_constraint = {
     **get_goal_driven_examples(seed=42, with_constraint=False),
-    "proposer_num_rounds": 3,
-    "proposer_num_explanations_per_round": 5,
+    "proposer_num_rounds": 5,
+    "proposer_num_explanations_per_round": 3,
     "proposer_detailed": True,
 }
 
@@ -68,6 +61,7 @@ if __name__ == "__main__":
         print(f"  validation results: {result.validation_results[explanation_idx]}")
 
     feature_vals = np.array(result.validation_results).T
+
     explanation_coefs = KSparseRegression(feature_vals, result.Y, K=2)
 
     for explanation_idx, explanation in enumerate(result.all_explanations):

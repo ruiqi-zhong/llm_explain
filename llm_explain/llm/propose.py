@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from llm_explain.utils import extract_tag_from_output, logger
 from openai import OpenAI
 import numpy as np
+from multiprocessing import Pool
+import random
 
 PREDICATE_TAG = "predicate"
 detailed_predicates: list[str] = [
@@ -113,8 +115,29 @@ def create_proposer_diff_prompt_body(x_samples: list[str], y: list[bool], num_ex
     prompt_body: str = PROPOSER_DIFF_PROMPT_BODY_TEMPLATE.format(negative_block=negative_block, positive_block=positive_block, num_explanations=num_explanations, format_description=format_description, example_predicates_str=example_predicates_str, PREDICATE_TAG=PREDICATE_TAG, goal_constrained_suffix=suffix)
     return prompt_body
 
+def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: int, context: str = None, constraint: str = None, detailed: bool = False) -> str:
+    """
+    Create the prompt body for the proposer. It will be used as part of the user message.
 
-def get_proposer_messages(x_samples: list[str], y: list[bool], num_explanations: int, context: str = None, constraint: str = None, detailed: bool = True) -> list[dict]:
+    Args:
+        x_samples (list[str]): The list of x_samples.
+        num_explanations (int): The number of descriptions to propose.
+        context (str): The context to use for the descriptions.
+        constraint (str): The constraint to use for the descriptions.
+        detailed (bool): Whether to use detailed or simple descriptions.
+
+    Returns:
+        str: The prompt body.
+    """
+
+    block: str = create_block_of_x_samples(x_samples, "Sample")
+
+    format_description, example_predicates_str = _prepare_prefix_for_proposer_prompt(detailed)
+    suffix: str = _prepare_suffix_for_proposer_prompt(context, constraint)
+    prompt_body: str = PROPOSER_CLUSTER_PROMPT_BODY_TEMPLATE.format(block=block, num_explanations=num_explanations, format_description=format_description, example_predicates_str=example_predicates_str, PREDICATE_TAG=PREDICATE_TAG, goal_constrained_suffix=suffix)
+    return prompt_body
+
+def get_proposer_messages(x_samples: list[str], y: list[bool] | None = None, num_explanations: int = 5, context: str = None, constraint: str = None, detailed: bool = True, task_name: str = "diff") -> list[dict]:
     """
     Get the messages for the proposer.
 
@@ -129,8 +152,10 @@ def get_proposer_messages(x_samples: list[str], y: list[bool], num_explanations:
     Returns:
         list[dict]: The messages for the proposer.
     """
-    
-    prompt_body: str = create_proposer_diff_prompt_body(x_samples, y, num_explanations, context, constraint, detailed=detailed)
+    if task_name == "diff":
+        prompt_body: str = create_proposer_diff_prompt_body(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed)
+    elif task_name == "cluster":
+        prompt_body: str = create_proposer_cluster_prompt_body(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed)
     logger.debug(f"Prompt body: {prompt_body}")
 
     messages: list[dict] = [
@@ -140,7 +165,19 @@ def get_proposer_messages(x_samples: list[str], y: list[bool], num_explanations:
 
     return messages
 
-def propose_diff(x_samples: list[str], y: list[bool] | None = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", detailed: bool = True, client: OpenAI = None, temperature: float = 1.0) -> list[str]:
+def postprocess_explanations_list_from_raw_output(raw_output: ExplanationList, num_explanations: int) -> list[str]:
+    """
+    Postprocess the explanations list from the raw output.
+    """
+    explanations_list: list[str | None] = [extract_tag_from_output(explanation, PREDICATE_TAG) for explanation in raw_output.explanations]
+    logger.debug(f"Explanations list unfiltered: {explanations_list}")
+    filtered_explanations_list: list[str] = [explanation for explanation in explanations_list if explanation is not None]
+    if len(filtered_explanations_list) != num_explanations:
+        logger.warning(f"Proposer expected {num_explanations} explanations, but got {len(filtered_explanations_list)}")
+    
+    return filtered_explanations_list
+
+def propose(x_samples: list[str], y: list[bool] | None = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", detailed: bool = True, client: OpenAI = None, temperature: float = 1.0, task_name: str = "diff") -> list[str]:
     """
     Propose a list of descriptions for the x_samples in the positive class.
 
@@ -161,11 +198,17 @@ def propose_diff(x_samples: list[str], y: list[bool] | None = None, num_explanat
     if client is None:
         client = OpenAI()
     x_samples = np.array(x_samples)
-    if y is not None:
+
+    if y is not None and task_name == "diff":
         y = np.array(y, dtype=bool)
 
     # prepare the messages
-    messages: list[dict] = get_proposer_messages(x_samples, y, num_explanations, context, constraint, detailed)
+    if task_name == "diff":
+        messages: list[dict] = get_proposer_messages(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed, task_name=task_name)
+    elif task_name == "cluster":
+        messages: list[dict] = get_proposer_messages(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed, task_name=task_name)
+    else:
+        raise ValueError(f"Invalid task name: {task_name}")
 
     # send the message to the model and parse the output
     raw_output: list[str] = client.responses.parse(
@@ -173,14 +216,48 @@ def propose_diff(x_samples: list[str], y: list[bool] | None = None, num_explanat
         input=messages,
         text_format=ExplanationList,
         temperature=temperature,
-    ).output_parsed.explanations
+    ).output_parsed
     logger.debug(f"Raw response: {raw_output}")
 
-    # parse the explanations from the output, filter out the None values, and check if the number of explanations is correct
-    explanations_list: list[str | None] = [extract_tag_from_output(explanation, PREDICATE_TAG) for explanation in raw_output]
-    logger.debug(f"Explanations list unfiltered: {explanations_list}")
-    filtered_explanations_list: list[str] = [explanation for explanation in explanations_list if explanation is not None]
-    if len(filtered_explanations_list) != num_explanations:
-        logger.warning(f"Proposer expected {num_explanations} explanations, but got {len(filtered_explanations_list)}")
-    
-    return filtered_explanations_list
+    return postprocess_explanations_list_from_raw_output(raw_output, num_explanations)
+
+
+def balanced_sampling(X: list[str], Y: list[bool], num_samples: int) -> tuple[list[str], list[bool]]:
+    """
+    Randomly sample num_samples from positive and negative classes each in case the two classes are imbalanced.
+    """
+    X, Y = np.array(X), np.array(Y, dtype=bool)
+    x_samples_positive: list[str] = X[Y]
+    x_samples_negative: list[str] = X[~Y]
+
+    random.shuffle(x_samples_positive)
+    random.shuffle(x_samples_negative)
+
+    new_x_samples: list[str] = np.concatenate([x_samples_positive[:num_samples], x_samples_negative[:num_samples]])
+    new_y: list[bool] = np.concatenate([np.ones(num_samples), np.zeros(num_samples)])
+    return new_x_samples, new_y
+
+
+def _propose_round(args: tuple[list[str], list[bool], str | None, str | None, int, int, str, float, OpenAI, bool, str]) -> list[str]:
+    """
+    Propose explanations for a round, used mostly as a helper function for parallelization.
+    """
+    X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_detailed, task_name = args
+    if task_name == "diff":
+        subsampled_x_samples, subsampled_y = balanced_sampling(X, Y, proposer_num_x_samples_per_round)
+    elif task_name == "cluster":
+        assert Y is None
+        subsampled_x_samples, subsampled_y = random.sample(X, proposer_num_x_samples_per_round), None
+    return propose(x_samples=subsampled_x_samples, y=subsampled_y, context=context, constraint=constraint, num_explanations=proposer_num_explanations_per_round, model_name=proposer_model_name, temperature=proposer_temperature, client=proposer_client, detailed=proposer_detailed, task_name=task_name)
+
+def propose_in_parallel(X: list[str], Y: list[bool], context: str | None, constraint: str | None, proposer_model_name: str, proposer_temperature: float, proposer_client: OpenAI, proposer_detailed: bool, proposer_num_rounds: int, proposer_num_explanations_per_round: int, proposer_num_x_samples_per_round: int, num_processes_max: int, task_name: str) -> list[str]:
+    """
+    Propose multiple rounds of explanations in parallel. 
+    """
+    all_proposed_explanations: list[str] = []
+    with Pool(processes=min(proposer_num_rounds, num_processes_max)) as pool:
+        args = [(X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_detailed, task_name) for _ in range(proposer_num_rounds)]
+        results = pool.map(_propose_round, args)
+        for proposed_explanations in results:
+            all_proposed_explanations.extend(proposed_explanations)
+    return all_proposed_explanations

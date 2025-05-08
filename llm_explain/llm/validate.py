@@ -1,10 +1,13 @@
 from llm_explain.utils import extract_tag_from_output, logger
 from openai import OpenAI
 from pydantic import BaseModel
+from multiprocessing import Pool
+
 class Answer(BaseModel):
     answer: str
 
 ANSWER_TAG: str = "answer"
+DEFAULT_ANSWER: float = 0.5
 
 VALIDATION_EXAMPLES: list[dict] = [
     {
@@ -95,4 +98,31 @@ def validate(predicate: str, x_sample: str, model_name: str = "gpt-4o", client: 
     if answer not in ["yes", "no"]:
         logger.warning(f"Invalid raw response {raw_output}")
 
-    return answer_dict.get(answer, None)
+    return answer_dict.get(answer, DEFAULT_ANSWER)
+
+def _validate_round(args: tuple[str, str, str, OpenAI]) -> bool:
+    """
+    Validate an explanation for a round.
+    """
+    explanation, x_sample, validator_model_name, validator_client = args
+    return validate(predicate=explanation, x_sample=x_sample, model_name=validator_model_name, client=validator_client)
+
+def validate_in_parallel(explanations: list[str], X: list[str], validator_model_name: str, validator_client: OpenAI, num_processes_max: int) -> dict[str, dict[str, bool]]:
+    """
+    Validate multiple explanations on multiple x_samples in parallel.
+    """
+    validation_tasks = []
+    for explanation in explanations:
+        for x_sample in X:
+            validation_tasks.append((explanation, x_sample, validator_model_name, validator_client))
+
+    with Pool(processes=min(len(validation_tasks), num_processes_max)) as pool:
+        validation_results = pool.map(_validate_round, validation_tasks)
+
+    explanation2x_sample2matches = {}
+    for (explanation, x_sample, _, _), result in zip(validation_tasks, validation_results):
+        if explanation not in explanation2x_sample2matches:
+            explanation2x_sample2matches[explanation] = {}
+        explanation2x_sample2matches[explanation][x_sample] = result
+
+    return explanation2x_sample2matches
