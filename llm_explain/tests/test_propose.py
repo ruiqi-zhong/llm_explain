@@ -1,6 +1,6 @@
 from llm_explain.llm.propose import propose
 
-if __name__ == "__main__":
+def test_propose():
     x_samples = ["cat", "dog", "fish", "carrot", "potato", "apple"]
     y = [False, False, False, True, True, True]
 
@@ -19,3 +19,6 @@ if __name__ == "__main__":
     print("Here are the cluster explanations:")
     for explanation in cluster_explanations:
         print("-", explanation)
+
+if __name__ == "__main__":
+    test_propose()

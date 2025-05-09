@@ -1,7 +1,7 @@
 from llm_explain.data.samples import news_title_for_clustering
 from llm_explain.models.cluster import ClusteringResult, explain_cluster
 
-if __name__ == "__main__":
+def test_cluster():
     # a quick and easy test to check if the cluster model works
     X = ["cat", "dog", "fish", "carrot", "potato", "apple"]
     simple_clustering_result: ClusteringResult = explain_cluster(X, num_clusters=2, proposer_num_rounds=4, proposer_num_explanations_per_round=2, proposer_num_x_samples_per_round=6)
@@ -15,3 +15,6 @@ if __name__ == "__main__":
     
     print("Clustering Result on news title dataset:")
     print(clustering_result)
+
+if __name__ == "__main__":
+    test_cluster()

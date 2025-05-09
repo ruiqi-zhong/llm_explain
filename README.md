@@ -17,6 +17,28 @@ See the notebooks, ```llm_explain/tests/test_cluster.py```, and ```llm_explain/t
 
 If you want to build on it, refer to other test files to understand the rest of the repo. 
 
+### A quick example after installation
+
+run python: 
+```
+>>> from llm_explain.models.diff import explain_diff                                                                                                                            >>> >>> >>> explain_diff(["cat", "dog", "fish", "carrot", "potato", "apple"], [False, False, False, True, True, True], proposer_num_rounds=2, proposer_num_explanations_per_round=2)
+```
+
+You will get outputs similar to the following in fewer than 30 seconds:
+
+```
+Printing top 3 explanations:
+Explanation: refers to a plant-based item; specifically, the text mentions items that grow from plants, including vegetables and fruits. For example, 'carrot' is a type of root vegetable.
+Accuracy: 1.0
+
+Explanation: is a type of food; specifically, the text refers to items commonly recognized as food, typically vegetables or fruits. For example, 'apple' is known to be a fruit consumed as food.
+Accuracy: 0.8333333333333333
+
+Explanation: mentions a type of food; specifically, the text refers to something that is commonly eaten by humans. For example, 'This apple is very juicy.'
+Accuracy: 0.8333333333333333
+```
+
+
 ### Notebooks 
 
 The notebooks illustrate the following sections in the video tutorial.

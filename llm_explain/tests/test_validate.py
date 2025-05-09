@@ -1,6 +1,6 @@
 from llm_explain.llm.validate import validate
 
-if __name__ == "__main__":
+def test_validate():
     predicate = "is anti-vaccination"
     x_samples = [
         "I am against vaccination because it is dangerous",
@@ -13,3 +13,5 @@ if __name__ == "__main__":
         print(f"{x_sample}: {answer}")
 
 
+if __name__ == "__main__":
+    test_validate()

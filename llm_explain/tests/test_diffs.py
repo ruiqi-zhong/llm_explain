@@ -44,7 +44,7 @@ def test_KSparseRegression():
     print("true coefs: ", coefs)
 
 
-if __name__ == "__main__":
+def test_explain_diff():
     # run_case = airline_goal_driven_toy_example_no_constraint
     run_case = airline_goal_driven_toy_example
     result: ExplainDiffResult = explain_diff(**run_case)
@@ -68,3 +68,6 @@ if __name__ == "__main__":
         if explanation_coefs[explanation_idx] != 0:
             print(f"{explanation_idx}: {explanation}")
             print(f"  coef: {explanation_coefs[explanation_idx]}")
+
+if __name__ == "__main__":
+    test_explain_diff()
