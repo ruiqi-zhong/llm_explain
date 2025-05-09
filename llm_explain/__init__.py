@@ -20,8 +20,3 @@ console_handler.setFormatter(logging.Formatter(format_str, datefmt=date_format))
 
 logger.addHandler(console_handler)
 logger.debug("Logger initialized")
-
-from .models.diff import explain_diff
-from .models.cluster import explain_cluster
-
-__all__ = ["explain_diff", "explain_cluster"]
