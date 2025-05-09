@@ -1,5 +1,5 @@
 from llm_explain.models.diff import explain_diff, ExplainDiffResult, KSparseRegression
-from data.samples import get_goal_driven_examples
+from llm_explain.data.samples import get_goal_driven_examples
 import numpy as np
 
 debug_case_no_detail = {

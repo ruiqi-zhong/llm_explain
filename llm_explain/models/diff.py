@@ -63,6 +63,29 @@ def explain_diff(
         num_processes_max: int=10,
         random_seed: int=42,
 ) -> ExplainDiffResult:
+    """
+    Explain the difference between two sets of data.
+
+    Args:
+        X: list[str], the input x_samples
+        Y: list[bool], whether each x_sample belongs to the positive class
+        context: str, the context of this explanation task
+        constraint: str, the constraint of this explanation task
+        proposer_model_name: str, the model name of the proposer, usually gpt-4o or any capable LLM
+        proposer_temperature: float, the temperature of the proposer, 0.0 is deterministic, 1.0 is random
+        proposer_client: OpenAI, the client of the proposer
+        proposer_precise: bool, whether the proposed explanations should be precise (i.e. long and detailed)
+        proposer_num_rounds: int, the number of rounds of proposing explanations
+        proposer_num_explanations_per_round: int, the number of explanations to propose per round, so in total proposer_num_rounds * proposer_num_explanations_per_round explanations will be proposed
+        proposer_num_x_samples_per_round: int, the number of x_samples to propose per round, so in total proposer_num_rounds * proposer_num_x_samples_per_round x_samples will be proposed
+        validator_model_name: str, the model name of the validator, usually gpt-4o but sometimes can be replaced by smaller models
+        validator_client: OpenAI, the client of the validator
+        num_processes_max: int, the maximum number of processes to use, depending on your rate limit
+        random_seed: int, the random seed
+
+    Returns:
+        ExplainDiffResult, an object containing the explanations, their accuracy, and the validation results
+    """
     random.seed(random_seed)
     X, Y = np.array(X), np.array(Y)
 

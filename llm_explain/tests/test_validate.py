@@ -1,4 +1,4 @@
-from llm_explain.llm.validate import create_prompt_body, validate
+from llm_explain.llm.validate import validate
 
 if __name__ == "__main__":
     predicate = "is anti-vaccination"

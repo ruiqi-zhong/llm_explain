@@ -1,4 +1,4 @@
-from data.samples import news_title_for_clustering
+from llm_explain.data.samples import news_title_for_clustering
 from llm_explain.models.cluster import ClusteringResult, explain_cluster
 
 if __name__ == "__main__":
