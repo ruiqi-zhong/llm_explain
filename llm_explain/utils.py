@@ -1,5 +1,6 @@
 import re
 import logging
+from typing import Union
 
 logging_level = logging.DEBUG
 
@@ -23,7 +24,7 @@ logger.addHandler(console_handler)
 logger.debug("Logger initialized")
 
 
-def extract_tag_from_output(output: str, tag: str) -> str | None:
+def extract_tag_from_output(output: str, tag: str) -> Union[str, None]:
     try:
         return re.search(rf"<{tag}>(.*?)</{tag}>", output).group(1)
     except Exception as e:

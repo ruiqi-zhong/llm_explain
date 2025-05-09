@@ -4,6 +4,7 @@ from openai import OpenAI
 import random
 import numpy as np
 from dataclasses import dataclass
+from typing import Union
 
 
 def get_balanced_accuracy(preds: np.ndarray, Y: np.ndarray) -> float:
@@ -41,7 +42,7 @@ class ExplainDiffResult:
 
 def explain_diff(
         X: list[str], Y: list[bool], 
-        context: str | None = None, constraint: str | None = None,
+        context: Union[str, None] = None, constraint: Union[str, None] = None,
         proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_detailed: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
         validator_model_name: str="gpt-4o", validator_client: OpenAI=None, 
         num_processes_max: int=10,

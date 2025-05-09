@@ -5,10 +5,13 @@ from llm_explain.llm.propose import propose_in_parallel
 from llm_explain.llm.validate import validate_in_parallel
 from itertools import combinations
 from dataclasses import dataclass
+from typing import Union
+
 
 def select_indices_based_on_validation_results(validation_results: list[list[bool]], num_clusters: int) -> list[int]:
     """
-    Select indices based on validation results.
+    Select indices based on validation results. 
+    This is a brute force approach to find the best clustering. Do not use this in production.
     """
     validation_results = np.array(validation_results)
 
@@ -27,6 +30,7 @@ def select_indices_based_on_validation_results(validation_results: list[list[boo
             minimal_indices = indices
 
     return minimal_indices
+
 
 @dataclass
 class ClusteringResult:
@@ -62,21 +66,50 @@ class ClusteringResult:
 def explain_cluster(
     X: list[str],
     num_clusters,
-    context: str | None = None,
-    constraint: str | None = None,
+    context: Union[str, None] = None,
+    constraint: Union[str, None] = None,
     proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_detailed: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
     validator_model_name: str="gpt-4o", validator_client: OpenAI=None, 
     num_processes_max: int=10,
     random_seed: int=42,
-):
+) -> ClusteringResult:
+    """
+    Explainable clustering with the help of language models.
+
+    Args:
+        X: The dataset to cluster.
+        num_clusters: The number of clusters to create.
+        context: The context to use for the clustering.
+        constraint: The constraint to use for the clustering.
+        proposer_model_name: The model to use for the proposer.
+        proposer_temperature: The temperature to use for the proposer.
+        proposer_client: The client to use for the proposer.
+        proposer_detailed: Whether to use detailed explanations.
+        proposer_num_rounds: The number of rounds to use for the proposer.
+        proposer_num_explanations_per_round: The number of explanations to propose per round.
+        proposer_num_x_samples_per_round: The number of x samples to use per round.
+        validator_model_name: The model to use for the validator.
+        validator_client: The client to use for the validator.
+        num_processes_max: The maximum number of processes to use.
+        random_seed: The random seed to use.
+
+    Returns:
+        A ClusteringResult object.
+    """
     random.seed(random_seed)
 
+    # Propose explanations
     all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=None, context=context, constraint=constraint, proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_detailed=proposer_detailed, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="cluster")
 
+    # Validate explanations
     explanation2x_sample2matches: dict[str, dict[str, bool]] = validate_in_parallel(all_proposed_explanations, X, 
                                                        validator_model_name, validator_client, num_processes_max)
     validation_results: list[list[bool]] = [[explanation2x_sample2matches[explanation][x_sample] for x_sample in X] for explanation in all_proposed_explanations]
+
+    # Select the clusters
     selected_indices: list[int] = select_indices_based_on_validation_results(validation_results, num_clusters)
+
+    # aggregate the results
     result: ClusteringResult = ClusteringResult(X, all_proposed_explanations, explanation2x_sample2matches, selected_indices)
 
     return result

@@ -2,7 +2,7 @@ from llm_explain.utils import extract_tag_from_output, logger
 from openai import OpenAI
 from pydantic import BaseModel
 from multiprocessing import Pool
-
+from typing import Union
 class Answer(BaseModel):
     answer: str
 
@@ -63,7 +63,7 @@ def create_prompt_body(predicate: str, x_sample: str) -> str:
 
 
 
-def validate(predicate: str, x_sample: str, model_name: str = "gpt-4o", client: OpenAI = None, temperature: float = 0.0) -> bool | None:
+def validate(predicate: str, x_sample: str, model_name: str = "gpt-4o", client: OpenAI = None, temperature: float = 0.0) -> Union[bool, None]:
     """
     Validate whether a x_sample x_sample surrounds by <x_sample> tags satisfies a predicate surrounds by <predicate> tags.
 
@@ -110,6 +110,16 @@ def _validate_round(args: tuple[str, str, str, OpenAI]) -> bool:
 def validate_in_parallel(explanations: list[str], X: list[str], validator_model_name: str, validator_client: OpenAI, num_processes_max: int) -> dict[str, dict[str, bool]]:
     """
     Validate multiple explanations on multiple x_samples in parallel.
+
+    Args:
+        explanations (list[str]): The explanations to validate.
+        X (list[str]): The x_samples to validate.
+        validator_model_name (str): The name of the model to use.
+        validator_client (OpenAI): The client to use.
+        num_processes_max (int): The maximum number of processes to use. Typically upperbounded by the rate limit of your openai account.
+
+    Returns:
+        dict[str, dict[str, bool]]: A dictionary of explanations to x_samples to boolean values.
     """
     validation_tasks = []
     for explanation in explanations:

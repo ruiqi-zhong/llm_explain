@@ -4,6 +4,7 @@ from openai import OpenAI
 import numpy as np
 from multiprocessing import Pool
 import random
+from typing import Union
 
 PREDICATE_TAG = "predicate"
 detailed_predicates: list[str] = [
@@ -137,7 +138,7 @@ def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: 
     prompt_body: str = PROPOSER_CLUSTER_PROMPT_BODY_TEMPLATE.format(block=block, num_explanations=num_explanations, format_description=format_description, example_predicates_str=example_predicates_str, PREDICATE_TAG=PREDICATE_TAG, goal_constrained_suffix=suffix)
     return prompt_body
 
-def get_proposer_messages(x_samples: list[str], y: list[bool] | None = None, num_explanations: int = 5, context: str = None, constraint: str = None, detailed: bool = True, task_name: str = "diff") -> list[dict]:
+def get_proposer_messages(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, detailed: bool = True, task_name: str = "diff") -> list[dict]:
     """
     Get the messages for the proposer.
 
@@ -169,7 +170,7 @@ def postprocess_explanations_list_from_raw_output(raw_output: ExplanationList, n
     """
     Postprocess the explanations list from the raw output.
     """
-    explanations_list: list[str | None] = [extract_tag_from_output(explanation, PREDICATE_TAG) for explanation in raw_output.explanations]
+    explanations_list: list[Union[str, None]] = [extract_tag_from_output(explanation, PREDICATE_TAG) for explanation in raw_output.explanations]
     logger.debug(f"Explanations list unfiltered: {explanations_list}")
     filtered_explanations_list: list[str] = [explanation for explanation in explanations_list if explanation is not None]
     if len(filtered_explanations_list) != num_explanations:
@@ -177,7 +178,7 @@ def postprocess_explanations_list_from_raw_output(raw_output: ExplanationList, n
     
     return filtered_explanations_list
 
-def propose(x_samples: list[str], y: list[bool] | None = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", detailed: bool = True, client: OpenAI = None, temperature: float = 1.0, task_name: str = "diff") -> list[str]:
+def propose(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", detailed: bool = True, client: OpenAI = None, temperature: float = 1.0, task_name: str = "diff") -> list[str]:
     """
     Propose a list of descriptions for the x_samples in the positive class.
 
@@ -238,7 +239,7 @@ def balanced_sampling(X: list[str], Y: list[bool], num_samples: int) -> tuple[li
     return new_x_samples, new_y
 
 
-def _propose_round(args: tuple[list[str], list[bool], str | None, str | None, int, int, str, float, OpenAI, bool, str]) -> list[str]:
+def _propose_round(args: tuple[list[str], list[bool], Union[str, None], Union[str, None], int, int, str, float, OpenAI, bool, str]) -> list[str]:
     """
     Propose explanations for a round, used mostly as a helper function for parallelization.
     """
@@ -250,7 +251,7 @@ def _propose_round(args: tuple[list[str], list[bool], str | None, str | None, in
         subsampled_x_samples, subsampled_y = random.sample(X, proposer_num_x_samples_per_round), None
     return propose(x_samples=subsampled_x_samples, y=subsampled_y, context=context, constraint=constraint, num_explanations=proposer_num_explanations_per_round, model_name=proposer_model_name, temperature=proposer_temperature, client=proposer_client, detailed=proposer_detailed, task_name=task_name)
 
-def propose_in_parallel(X: list[str], Y: list[bool], context: str | None, constraint: str | None, proposer_model_name: str, proposer_temperature: float, proposer_client: OpenAI, proposer_detailed: bool, proposer_num_rounds: int, proposer_num_explanations_per_round: int, proposer_num_x_samples_per_round: int, num_processes_max: int, task_name: str) -> list[str]:
+def propose_in_parallel(X: list[str], Y: list[bool], context: Union[str, None], constraint: Union[str, None], proposer_model_name: str, proposer_temperature: float, proposer_client: OpenAI, proposer_detailed: bool, proposer_num_rounds: int, proposer_num_explanations_per_round: int, proposer_num_x_samples_per_round: int, num_processes_max: int, task_name: str) -> list[str]:
     """
     Propose multiple rounds of explanations in parallel. 
     """

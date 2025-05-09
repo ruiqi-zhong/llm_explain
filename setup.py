@@ -8,5 +8,7 @@ setup(
         "openai",
         "pydantic",
         "requests",
+        "numpy",
+        "scikit-learn"
     ],
 )
