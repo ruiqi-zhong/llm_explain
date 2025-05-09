@@ -9,6 +9,7 @@ setup(
         "pydantic",
         "requests",
         "numpy",
-        "scikit-learn"
+        "scikit-learn",
+        "tqdm"
     ],
 )

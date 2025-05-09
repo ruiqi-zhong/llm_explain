@@ -6,7 +6,7 @@ from llm_explain.llm.validate import validate_in_parallel
 from itertools import combinations
 from dataclasses import dataclass
 from typing import Union
-
+from llm_explain import logger
 
 def select_indices_based_on_validation_results(validation_results: list[list[bool]], num_clusters: int) -> list[int]:
     """
@@ -98,14 +98,17 @@ def explain_cluster(
     """
     random.seed(random_seed)
 
+    logger.info(f"Proposing explanations...")
     # Propose explanations
     all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=None, context=context, constraint=constraint, proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_precise=proposer_precise, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="cluster")
 
+    logger.info(f"Validating explanations, {len(all_proposed_explanations)} explanations x {len(X)} x_samples")
     # Validate explanations
     explanation2x_sample2matches: dict[str, dict[str, bool]] = validate_in_parallel(all_proposed_explanations, X, 
                                                        validator_model_name, validator_client, num_processes_max)
     validation_results: list[list[bool]] = [[explanation2x_sample2matches[explanation][x_sample] for x_sample in X] for explanation in all_proposed_explanations]
 
+    logger.info(f"Selecting {num_clusters} clusters from {len(all_proposed_explanations)} candidates")
     # Select the clusters
     selected_indices: list[int] = select_indices_based_on_validation_results(validation_results, num_clusters)
 

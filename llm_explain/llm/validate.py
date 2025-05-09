@@ -1,8 +1,11 @@
-from llm_explain.utils import extract_tag_from_output, logger
+from llm_explain.utils import extract_tag_from_output
+from llm_explain import logger
 from openai import OpenAI
 from pydantic import BaseModel
 from multiprocessing import Pool
 from typing import Union
+import tqdm
+
 class Answer(BaseModel):
     answer: str
 
@@ -127,7 +130,7 @@ def validate_in_parallel(explanations: list[str], X: list[str], validator_model_
             validation_tasks.append((explanation, x_sample, validator_model_name, validator_client))
 
     with Pool(processes=min(len(validation_tasks), num_processes_max)) as pool:
-        validation_results = pool.map(_validate_round, validation_tasks)
+        validation_results = list(tqdm.tqdm(pool.imap(_validate_round, validation_tasks), total=len(validation_tasks), desc="Validating explanations"))
 
     explanation2x_sample2matches = {}
     for (explanation, x_sample, _, _), result in zip(validation_tasks, validation_results):

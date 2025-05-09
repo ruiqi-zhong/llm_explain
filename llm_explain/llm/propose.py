@@ -1,10 +1,12 @@
 from pydantic import BaseModel
-from llm_explain.utils import extract_tag_from_output, logger
+from llm_explain.utils import extract_tag_from_output
+from llm_explain import logger
 from openai import OpenAI
 import numpy as np
 from multiprocessing import Pool
 import random
 from typing import Union
+import tqdm
 
 PREDICATE_TAG = "predicate"
 precise_predicates: list[str] = [
@@ -258,9 +260,10 @@ def propose_in_parallel(X: list[str], Y: list[bool], context: Union[str, None], 
     Propose multiple rounds of explanations in parallel. 
     """
     all_proposed_explanations: list[str] = []
+
     with Pool(processes=min(proposer_num_rounds, num_processes_max)) as pool:
         args = [(X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_precise, task_name) for _ in range(proposer_num_rounds)]
-        results = pool.map(_propose_round, args)
+        results = list(tqdm.tqdm(pool.imap(_propose_round, args), total=proposer_num_rounds, desc="Proposing explanations"))
         for proposed_explanations in results:
             all_proposed_explanations.extend(proposed_explanations)
     return all_proposed_explanations

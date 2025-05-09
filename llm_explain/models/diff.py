@@ -1,5 +1,6 @@
 from llm_explain.llm.propose import propose_in_parallel
 from llm_explain.llm.validate import validate_in_parallel
+from llm_explain import logger
 from openai import OpenAI
 import random
 import numpy as np
@@ -65,10 +66,12 @@ def explain_diff(
     random.seed(random_seed)
     X, Y = np.array(X), np.array(Y)
 
+    logger.info(f"Proposing explanations...")
     # propose explanations, get a list of explanations (\phi)
     all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=Y, context=context, constraint=constraint, 
                                                      proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_precise=proposer_precise, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="diff")
     
+    logger.info(f"Validating explanations, {len(all_proposed_explanations)} explanations x {len(X)} x_samples")
     # validate explanations, get a dict of explanation (\phi) -> x_sample (x) -> bool [[\phi]](x)
     explanation2x_sample2matches: dict[str, dict[str, bool]] = validate_in_parallel(all_proposed_explanations, X, 
                                                        validator_model_name, validator_client, num_processes_max)
@@ -87,6 +90,7 @@ def KSparseRegression(X: np.ndarray, Y: np.ndarray, K: int) -> np.ndarray:
 
     Returns a 1D numpy array of shape (n_features,) containing the coefficients of the selected features.
     """
+    logger.info(f"Performing K-sparse regression on {X.shape[1]} features {X.shape[0]} samples")
     from sklearn.linear_model import LogisticRegression
     model = LogisticRegression(penalty="l1", solver="liblinear")
     model.fit(X, Y)
