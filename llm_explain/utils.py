@@ -2,7 +2,7 @@ import re
 import logging
 from typing import Union
 
-logging_level = logging.DEBUG
+logging_level = logging.INFO
 
 # Define the logger
 logger = logging.getLogger(__name__)

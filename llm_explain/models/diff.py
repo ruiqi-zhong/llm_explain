@@ -39,11 +39,25 @@ class ExplainDiffResult:
         self.explanation_balanced_accuracy = [explanation_balanced_accuracy[explanation] for explanation in all_explanations]
         self.all_explanations = all_explanations
         self.validation_results = [[explanation2x_sample2matches[explanation][x_sample] for x_sample in X] for explanation in all_explanations]
+    
+    def __repr__(self) -> str:
+        top_n = 3
+        output: str = f"Printing top {top_n} explanations:\n"
+        # Get indices of top 3 scoring explanations
+        top_n_indices = sorted(range(len(self.explanation_balanced_accuracy)), 
+                             key=lambda i: self.explanation_balanced_accuracy[i],
+                             reverse=True)[:top_n]
+        
+        for idx in top_n_indices:
+            output += f"Explanation: {self.all_explanations[idx]}\n"
+            output += f"Accuracy: {self.explanation_balanced_accuracy[idx]}\n"
+            output += "\n"
+        return output
 
 def explain_diff(
         X: list[str], Y: list[bool], 
         context: Union[str, None] = None, constraint: Union[str, None] = None,
-        proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_detailed: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
+        proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_precise: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
         validator_model_name: str="gpt-4o", validator_client: OpenAI=None, 
         num_processes_max: int=10,
         random_seed: int=42,
@@ -53,7 +67,7 @@ def explain_diff(
 
     # propose explanations, get a list of explanations (\phi)
     all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=Y, context=context, constraint=constraint, 
-                                                     proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_detailed=proposer_detailed, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="diff")
+                                                     proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_precise=proposer_precise, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="diff")
     
     # validate explanations, get a dict of explanation (\phi) -> x_sample (x) -> bool [[\phi]](x)
     explanation2x_sample2matches: dict[str, dict[str, bool]] = validate_in_parallel(all_proposed_explanations, X, 

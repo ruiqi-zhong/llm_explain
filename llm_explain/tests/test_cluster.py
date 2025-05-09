@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     # a slightly more complex test to check if the cluster model works
     X = news_title_for_clustering
-    clustering_result: ClusteringResult = explain_cluster(X, num_clusters=4, proposer_num_rounds=6, proposer_num_explanations_per_round=4, proposer_num_x_samples_per_round=6, proposer_detailed=False)
+    clustering_result: ClusteringResult = explain_cluster(X, num_clusters=4, proposer_num_rounds=6, proposer_num_explanations_per_round=4, proposer_num_x_samples_per_round=6, proposer_precise=False)
     
     print("Clustering Result on simple dataset:")
     print(simple_clustering_result)

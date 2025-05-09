@@ -68,7 +68,7 @@ def explain_cluster(
     num_clusters,
     context: Union[str, None] = None,
     constraint: Union[str, None] = None,
-    proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_detailed: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
+    proposer_model_name: str="gpt-4o", proposer_temperature: float=1.0, proposer_client: OpenAI=None, proposer_precise: bool=True, proposer_num_rounds: int=12, proposer_num_explanations_per_round: int=5, proposer_num_x_samples_per_round: int=12,
     validator_model_name: str="gpt-4o", validator_client: OpenAI=None, 
     num_processes_max: int=10,
     random_seed: int=42,
@@ -84,7 +84,7 @@ def explain_cluster(
         proposer_model_name: The model to use for the proposer.
         proposer_temperature: The temperature to use for the proposer.
         proposer_client: The client to use for the proposer.
-        proposer_detailed: Whether to use detailed explanations.
+        proposer_precise: Whether to use precise explanations.
         proposer_num_rounds: The number of rounds to use for the proposer.
         proposer_num_explanations_per_round: The number of explanations to propose per round.
         proposer_num_x_samples_per_round: The number of x samples to use per round.
@@ -99,7 +99,7 @@ def explain_cluster(
     random.seed(random_seed)
 
     # Propose explanations
-    all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=None, context=context, constraint=constraint, proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_detailed=proposer_detailed, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="cluster")
+    all_proposed_explanations: list[str] = propose_in_parallel(X=X, Y=None, context=context, constraint=constraint, proposer_model_name=proposer_model_name, proposer_temperature=proposer_temperature, proposer_client=proposer_client, proposer_precise=proposer_precise, proposer_num_rounds=proposer_num_rounds, proposer_num_explanations_per_round=proposer_num_explanations_per_round, proposer_num_x_samples_per_round=proposer_num_x_samples_per_round, num_processes_max=num_processes_max, task_name="cluster")
 
     # Validate explanations
     explanation2x_sample2matches: dict[str, dict[str, bool]] = validate_in_parallel(all_proposed_explanations, X, 

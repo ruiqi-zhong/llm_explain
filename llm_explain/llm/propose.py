@@ -7,12 +7,12 @@ import random
 from typing import Union
 
 PREDICATE_TAG = "predicate"
-detailed_predicates: list[str] = [
+precise_predicates: list[str] = [
     "uses double negation; specifically, there is a sentence in the text that uses negation twice. For example, 'the pilot did not never had an accident'",
     "has a conservative stance; specifically, the overall text exhibits a conservative political stance (e.g. pro-life, deregulation, etc). For example, 'Fetus is sentient so we should not abort.'"
 ]
 
-detailed_format_description: str = "about a text followed by an explanation and an example that satisfies the predicate."
+precise_format_description: str = "about a text followed by an explanation and an example that satisfies the predicate."
 
 simple_predicates: list[str] = [
     "uses double negation",
@@ -72,9 +72,9 @@ def create_block_of_x_samples(x_samples: list[str], prefix: str) -> str:
     return "\n".join([f"{prefix}.{i}: {sample}" for i, sample in enumerate(x_samples)])
 
 
-def _prepare_prefix_for_proposer_prompt(detailed: bool):
-    format_description: str = detailed_format_description if detailed else simple_format_description
-    example_predicates: list[str] = detailed_predicates if detailed else simple_predicates
+def _prepare_prefix_for_proposer_prompt(precise: bool):
+    format_description: str = precise_format_description if precise else simple_format_description
+    example_predicates: list[str] = precise_predicates if precise else simple_predicates
 
     example_predicates_str: str = "\n".join([f"<{PREDICATE_TAG}>{predicate}</{PREDICATE_TAG}>" for predicate in example_predicates])
 
@@ -92,7 +92,7 @@ def _prepare_suffix_for_proposer_prompt(context: str = None, constraint: str = N
     return suffix
 
 
-def create_proposer_diff_prompt_body(x_samples: list[str], y: list[bool], num_explanations: int, context: str = None, constraint: str = None, detailed: bool = False) -> str:
+def create_proposer_diff_prompt_body(x_samples: list[str], y: list[bool], num_explanations: int, context: str = None, constraint: str = None, precise: bool = False) -> str:
     """
     Create the prompt body for the proposer. It will be used as part of the user message.
 
@@ -102,21 +102,23 @@ def create_proposer_diff_prompt_body(x_samples: list[str], y: list[bool], num_ex
         num_explanations (int): The number of descriptions to propose.
         context (str): The context to use for the descriptions.
         constraint (str): The constraint to use for the descriptions.
-        detailed (bool): Whether to use detailed or simple descriptions.
+        precise (bool): Whether to use precise or simple descriptions.
 
     Returns:
         str: The prompt body.
     """
 
+    x_samples, y = np.array(x_samples), np.array(y, dtype=bool)
+
     negative_block: str = create_block_of_x_samples(x_samples[~y], "Negative class sample")
     positive_block: str = create_block_of_x_samples(x_samples[y], "Positive class sample")
 
-    format_description, example_predicates_str = _prepare_prefix_for_proposer_prompt(detailed)
+    format_description, example_predicates_str = _prepare_prefix_for_proposer_prompt(precise)
     suffix: str = _prepare_suffix_for_proposer_prompt(context, constraint)
     prompt_body: str = PROPOSER_DIFF_PROMPT_BODY_TEMPLATE.format(negative_block=negative_block, positive_block=positive_block, num_explanations=num_explanations, format_description=format_description, example_predicates_str=example_predicates_str, PREDICATE_TAG=PREDICATE_TAG, goal_constrained_suffix=suffix)
     return prompt_body
 
-def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: int, context: str = None, constraint: str = None, detailed: bool = False) -> str:
+def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: int, context: str = None, constraint: str = None, precise: bool = False) -> str:
     """
     Create the prompt body for the proposer. It will be used as part of the user message.
 
@@ -125,7 +127,7 @@ def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: 
         num_explanations (int): The number of descriptions to propose.
         context (str): The context to use for the descriptions.
         constraint (str): The constraint to use for the descriptions.
-        detailed (bool): Whether to use detailed or simple descriptions.
+        precise (bool): Whether to use precise or simple descriptions.
 
     Returns:
         str: The prompt body.
@@ -133,12 +135,12 @@ def create_proposer_cluster_prompt_body(x_samples: list[str], num_explanations: 
 
     block: str = create_block_of_x_samples(x_samples, "Sample")
 
-    format_description, example_predicates_str = _prepare_prefix_for_proposer_prompt(detailed)
+    format_description, example_predicates_str = _prepare_prefix_for_proposer_prompt(precise)
     suffix: str = _prepare_suffix_for_proposer_prompt(context, constraint)
     prompt_body: str = PROPOSER_CLUSTER_PROMPT_BODY_TEMPLATE.format(block=block, num_explanations=num_explanations, format_description=format_description, example_predicates_str=example_predicates_str, PREDICATE_TAG=PREDICATE_TAG, goal_constrained_suffix=suffix)
     return prompt_body
 
-def get_proposer_messages(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, detailed: bool = True, task_name: str = "diff") -> list[dict]:
+def get_proposer_messages(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, precise: bool = True, task_name: str = "diff") -> list[dict]:
     """
     Get the messages for the proposer.
 
@@ -148,15 +150,15 @@ def get_proposer_messages(x_samples: list[str], y: Union[list[bool], None] = Non
         num_explanations (int): The number of descriptions to propose.
         context (str): The context to use for the descriptions.
         constraint (str): The constraint to use for the descriptions.
-        detailed (bool): Whether to use detailed or simple descriptions.
+        precise (bool): Whether to use precise or simple descriptions.
 
     Returns:
         list[dict]: The messages for the proposer.
     """
     if task_name == "diff":
-        prompt_body: str = create_proposer_diff_prompt_body(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed)
+        prompt_body: str = create_proposer_diff_prompt_body(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, precise=precise)
     elif task_name == "cluster":
-        prompt_body: str = create_proposer_cluster_prompt_body(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed)
+        prompt_body: str = create_proposer_cluster_prompt_body(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, precise=precise)
     logger.debug(f"Prompt body: {prompt_body}")
 
     messages: list[dict] = [
@@ -178,7 +180,7 @@ def postprocess_explanations_list_from_raw_output(raw_output: ExplanationList, n
     
     return filtered_explanations_list
 
-def propose(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", detailed: bool = True, client: OpenAI = None, temperature: float = 1.0, task_name: str = "diff") -> list[str]:
+def propose(x_samples: list[str], y: Union[list[bool], None] = None, num_explanations: int = 5, context: str = None, constraint: str = None, model_name: str = "gpt-4o", precise: bool = True, client: OpenAI = None, temperature: float = 1.0, task_name: str = "diff") -> list[str]:
     """
     Propose a list of descriptions for the x_samples in the positive class.
 
@@ -189,7 +191,7 @@ def propose(x_samples: list[str], y: Union[list[bool], None] = None, num_explana
         context (str): The context to use for the descriptions.
         constraint (str): The constraint to use for the descriptions.
         model_name (str): The name of the model to use.
-        detailed (bool): Whether to use detailed or simple descriptions.
+        precise (bool): Whether to use precise or simple descriptions.
         client (OpenAI): The client to use for the descriptions.
         temperature (float): The temperature to use for the descriptions.
 
@@ -205,9 +207,9 @@ def propose(x_samples: list[str], y: Union[list[bool], None] = None, num_explana
 
     # prepare the messages
     if task_name == "diff":
-        messages: list[dict] = get_proposer_messages(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed, task_name=task_name)
+        messages: list[dict] = get_proposer_messages(x_samples=x_samples, y=y, num_explanations=num_explanations, context=context, constraint=constraint, precise=precise, task_name=task_name)
     elif task_name == "cluster":
-        messages: list[dict] = get_proposer_messages(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, detailed=detailed, task_name=task_name)
+        messages: list[dict] = get_proposer_messages(x_samples=x_samples, num_explanations=num_explanations, context=context, constraint=constraint, precise=precise, task_name=task_name)
     else:
         raise ValueError(f"Invalid task name: {task_name}")
 
@@ -228,14 +230,14 @@ def balanced_sampling(X: list[str], Y: list[bool], num_samples: int) -> tuple[li
     Randomly sample num_samples from positive and negative classes each in case the two classes are imbalanced.
     """
     X, Y = np.array(X), np.array(Y, dtype=bool)
-    x_samples_positive: list[str] = X[Y]
-    x_samples_negative: list[str] = X[~Y]
+    x_samples_positive: list[str] = X[Y][:num_samples]
+    x_samples_negative: list[str] = X[~Y][:num_samples]
 
     random.shuffle(x_samples_positive)
     random.shuffle(x_samples_negative)
 
-    new_x_samples: list[str] = np.concatenate([x_samples_positive[:num_samples], x_samples_negative[:num_samples]])
-    new_y: list[bool] = np.concatenate([np.ones(num_samples), np.zeros(num_samples)])
+    new_x_samples: list[str] = np.concatenate([x_samples_positive, x_samples_negative])
+    new_y: list[bool] = np.concatenate([np.ones(len(x_samples_positive)), np.zeros(len(x_samples_negative))])
     return new_x_samples, new_y
 
 
@@ -243,21 +245,21 @@ def _propose_round(args: tuple[list[str], list[bool], Union[str, None], Union[st
     """
     Propose explanations for a round, used mostly as a helper function for parallelization.
     """
-    X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_detailed, task_name = args
+    X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_precise, task_name = args
     if task_name == "diff":
         subsampled_x_samples, subsampled_y = balanced_sampling(X, Y, proposer_num_x_samples_per_round)
     elif task_name == "cluster":
         assert Y is None
         subsampled_x_samples, subsampled_y = random.sample(X, proposer_num_x_samples_per_round), None
-    return propose(x_samples=subsampled_x_samples, y=subsampled_y, context=context, constraint=constraint, num_explanations=proposer_num_explanations_per_round, model_name=proposer_model_name, temperature=proposer_temperature, client=proposer_client, detailed=proposer_detailed, task_name=task_name)
+    return propose(x_samples=subsampled_x_samples, y=subsampled_y, context=context, constraint=constraint, num_explanations=proposer_num_explanations_per_round, model_name=proposer_model_name, temperature=proposer_temperature, client=proposer_client, precise=proposer_precise, task_name=task_name)
 
-def propose_in_parallel(X: list[str], Y: list[bool], context: Union[str, None], constraint: Union[str, None], proposer_model_name: str, proposer_temperature: float, proposer_client: OpenAI, proposer_detailed: bool, proposer_num_rounds: int, proposer_num_explanations_per_round: int, proposer_num_x_samples_per_round: int, num_processes_max: int, task_name: str) -> list[str]:
+def propose_in_parallel(X: list[str], Y: list[bool], context: Union[str, None], constraint: Union[str, None], proposer_model_name: str, proposer_temperature: float, proposer_client: OpenAI, proposer_precise: bool, proposer_num_rounds: int, proposer_num_explanations_per_round: int, proposer_num_x_samples_per_round: int, num_processes_max: int, task_name: str) -> list[str]:
     """
     Propose multiple rounds of explanations in parallel. 
     """
     all_proposed_explanations: list[str] = []
     with Pool(processes=min(proposer_num_rounds, num_processes_max)) as pool:
-        args = [(X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_detailed, task_name) for _ in range(proposer_num_rounds)]
+        args = [(X, Y, context, constraint, proposer_num_x_samples_per_round, proposer_num_explanations_per_round, proposer_model_name, proposer_temperature, proposer_client, proposer_precise, task_name) for _ in range(proposer_num_rounds)]
         results = pool.map(_propose_round, args)
         for proposed_explanations in results:
             all_proposed_explanations.extend(proposed_explanations)

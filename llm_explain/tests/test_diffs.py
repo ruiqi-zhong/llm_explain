@@ -7,7 +7,7 @@ debug_case_no_detail = {
     "Y": [False, False, False, True, True, True],
     "proposer_num_rounds": 2,
     "proposer_num_explanations_per_round": 3,
-    "proposer_detailed": False,
+    "proposer_precise": False,
 }
 
 debug_case_with_detail = {
@@ -15,21 +15,21 @@ debug_case_with_detail = {
     "Y": [False, False, False, True, True, True],
     "proposer_num_rounds": 2,
     "proposer_num_explanations_per_round": 3,
-    "proposer_detailed": True,
+    "proposer_precise": True,
 }
 
 airline_goal_driven_toy_example = {
     **get_goal_driven_examples(seed=42),
     "proposer_num_rounds": 5,
     "proposer_num_explanations_per_round": 3,
-    "proposer_detailed": True,
+    "proposer_precise": True,
 }
 
 airline_goal_driven_toy_example_no_constraint = {
     **get_goal_driven_examples(seed=42, with_constraint=False),
     "proposer_num_rounds": 5,
     "proposer_num_explanations_per_round": 3,
-    "proposer_detailed": True,
+    "proposer_precise": True,
 }
 
 def test_KSparseRegression():
