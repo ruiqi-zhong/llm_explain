@@ -21,7 +21,8 @@ If you want to build on it, refer to other test files to understand the rest of 
 
 run python: 
 ```
->>> from llm_explain.models.diff import explain_diff                                                                                                                            >>> >>> >>> explain_diff(["cat", "dog", "fish", "carrot", "potato", "apple"], [False, False, False, True, True, True], proposer_num_rounds=2, proposer_num_explanations_per_round=2)
+>>> from llm_explain.models.diff import explain_diff                                                                                                                           
+>>> explain_diff(["cat", "dog", "fish", "carrot", "potato", "apple"], [False, False, False, True, True, True], proposer_num_rounds=2, proposer_num_explanations_per_round=2)
 ```
 
 You will get outputs similar to the following in fewer than 30 seconds:
