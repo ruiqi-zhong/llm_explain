@@ -20,3 +20,9 @@ console_handler.setFormatter(logging.Formatter(format_str, datefmt=date_format))
 
 logger.addHandler(console_handler)
 logger.debug("Logger initialized")
+
+import llm_explain.models as models
+import llm_explain.llm as llm
+import llm_explain.utils as utils
+
+__all__ = ["models", "llm", "utils"]
