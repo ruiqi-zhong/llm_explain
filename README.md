@@ -18,7 +18,9 @@ I recommend creating a conda environment with python >= 3.9 to use this package.
 
 ```pip3 install --no-cache-dir -v git+https://github.com/ruiqi-zhong/llm_explain.git```
 
-**Option 3**: 
+**Option 3**: install from pypi
+
+```pip3 install llm-explain```
 
 ## Usage
 
