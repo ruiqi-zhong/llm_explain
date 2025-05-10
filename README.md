@@ -2,14 +2,14 @@
 
 I will make a video tutorial on this topic; stay tuned. This is the library and notebooks to help the audience understand my tutorial. 
 
-### Installation
+## Installation
 
 I recommend creating a conda environment with python >= 3.9 to use this package.
 
 1. Run ```pip install -e .``` to install this package.
 2. Set up your openai key in your environment. i.e. ```export OPENAI_API_KEY="[Your OPENAI API KEY]"```
 
-### Usage
+## Usage
 
 This repo supports the bare bone implementation for explaining dataset differences and clusters. 
 
@@ -17,7 +17,7 @@ See the notebooks, ```llm_explain/tests/test_cluster.py```, and ```llm_explain/t
 
 If you want to build on it, refer to other test files to understand the rest of the repo. 
 
-### A quick example after installation
+## A quick example after installation
 
 run python: 
 ```
@@ -39,8 +39,7 @@ Explanation: mentions a type of food; specifically, the text refers to something
 Accuracy: 0.8333333333333333
 ```
 
-
-### Notebooks 
+## Notebooks 
 
 The notebooks illustrate the following sections in the video tutorial.
 - 1.1 Core method: the proposer-validator framework
@@ -49,7 +48,7 @@ The notebooks illustrate the following sections in the video tutorial.
 - 1.1 Extension 3: multiple explanations
 - 1.2: Explainable clustering
 
-### Related works
+## Related works
 
-```references.pdf``` contains the related works mentioned in our presentation. 
+```related/references.pdf``` contains the related works mentioned in our presentation. ```related/main.tex``` contains the latex source file and ```references.bib``` contains the bibtex citations.
 

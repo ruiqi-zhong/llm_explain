@@ -1,0 +1,118 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{stmaryrd}
+
+\title{Scalable Understanding of Datasets and Models \\with the Help of Language Models}
+\author{Ruiqi Zhong\footnote{Work done at UC Berkeley as a Ph.D. student, current email: ruiqizhong1997@gmail.com.} }
+\date{\today}
+
+\usepackage[margin=0.5in]{geometry}  % Decrease page margins to 1 inch
+\setlength{\parskip}{1em}  % Add vertical space between paragraphs
+\setlength{\parindent}{0pt}  % Remove paragraph indentation
+\setcounter{section}{-1}
+
+\begin{document}
+
+\maketitle
+
+\section*{Preface}
+This document provides a list of useful citations related to my tutorial.
+For a self-contained written introduction, please refer to my Ph.D. thesis: \textit{Natural Language Explanations of Dataset Patterns}.
+
+Using language models to explain other models and datasets is an important and promising research direction. I hope future researchers will build upon the works mentioned in this document.
+As this is currently a medium-sized research field, I cannot cover all related papers here, and this document should not be considered a comprehensive survey.
+See \citet{singh2024rethinking} for more related works.
+
+\section{Intro} \label{sec:intro}
+
+\noindent \textbf{Predictive Power of Explanations.} 
+The core idea we introduced in this line of research is that ``good explanations should allow humans to predict empirical observations.''
+This idea is well-established in scientific instrumentalism\footnote{\url{https://en.wikipedia.org/wiki/Instrumentalism}}, where scientific explanations do not aim to discover what is ``inherently true,'' but rather to help humans predict empirical phenomena and accomplish useful tasks.
+
+\noindent \textbf{Limitations of Traditional Explanation Methods.} 
+To categorize content in a large text corpus, topic models such as LDA \citep{blei2003latent} represent each topic as weights over a high-dimensional word vector, but \citet{chang2009reading} shows that the learned topics sometimes lack coherent meaning.
+Our work \citep{wang-etal-2023-goal} corroborated this finding and demonstrated that cluster explanations based on natural language are inherently more interpretable to humans.
+
+To explain image classifiers, gradient-based interpretability methods such as Grad-Cam \citep{selvaraju2017grad} highlight sets of pixels to explain classifier decisions.
+However, many concepts cannot be effectively explained by merely highlighting certain subregions.
+
+\noindent \textbf{Applications of Using LLMs to Explain.}
+There are already many real-world applications of using language models for explanation.
+We cover several mentioned in our tutorial:
+\begin{itemize}
+    \item \textbf{Explaining LLM Neurons:} \citet{choi2024automatic, bills2023language} use language models to explain language model neurons, and \citet{meng2024monitor} demonstrates how neuron descriptions can help debug LLM behaviors.
+    \item \textbf{Understanding Real-World AI Use}: \citet{tamkin2024clio} applies explainable clustering to user conversations with chatbots to understand real-world use cases, and follow-up research \cite{handa2025economic} uses such a system to understand the economic value of chatbots. 
+    \item \textbf{Understanding LLM Output Style}: \citet{dunlap2025vibecheck, sun2025idiosyncrasies} compare the output styles (tone, formatting, and writing style) of different language models, aspects not covered by traditional evaluations. 
+\end{itemize}
+
+\section{Explaining Static Datasets}
+
+\subsection{Explaining Dataset Differences}
+
+\noindent \textbf{Core Method: Proposer-Validator Framework.}
+The canonical approach to explaining datasets is to first propose explanations with LLMs and then validate them on individual datapoints.
+This approach is useful not only for explaining dataset differences but also for ``guessing the underlying instruction.''
+Multiple papers have independently discovered and demonstrated the utility of this approach, including \citet{singh2022explaining, zhou2022large, zhong2023goal, zhong2022describing, honovich2022instruction}.
+
+\noindent \textbf{Multi-Modal Application.} 
+The proposer-validator approach works not only in the text domain but also in the image domain.
+\citet{dunlap2023describing} uses this approach to describe differences between sets of images, and \citet{zhu2022gsclip} specifically focuses on explaining distribution shifts in image datasets. 
+
+\noindent \textbf{Extension 1: Precise explanations.} In \citet{wang-etal-2023-goal, zhong2024explaining}, we generate more detailed explanations by modifying the proposer prompt. 
+
+\noindent \textbf{Extension 2: Goal-Constrained Explanations.} 
+In \citet{zhong2023goal, wang-etal-2023-goal}, we propose adding natural language constraints to the prompt so that the explanations can be useful for the goal.
+
+\noindent \textbf{Extension 3: Extracting Multiple Explanations.}
+In \citet{zhong2024explaining}, we propose extracting multiple explanations by fitting a linear model on top of $\llbracket \phi \rrbracket(X)$.
+An independent line of work on ``language-based concept bottleneck networks'' has also explored similar approaches \citep{yang2023language, ludan2023interpretable, chiquier2024evolving, schrodi2024concept}.
+
+\subsection{Explainable Clustering}
+
+Many papers have explored using LLMs for clustering, including \citet{wang-etal-2023-goal, pham2023topicgpt, lam2024concept, viswanathan2024large, zhong2024explaining}.
+The propose and validation (assignment) steps appear in all of these papers.
+
+\section{Explaining Models}
+
+We touched on four different kinds of model explanations: 1) explaining neurons, 2) categorizing output styles, 3) explaining decision boundaries, and 4) understanding what LLMs are good at.
+We have covered related works for 1) and 2) in Section \ref{sec:intro}, and we will cover 3) and 4) here.
+
+\noindent \textbf{Explaining Decision Boundaries.}
+Our presentation is mostly based on the content from \citet{pmlr-v235-chen24bl}, which uses counterfactual simulatability to evaluate model explanations. 
+\citet{mills2023almanacs} explored a similar approach.
+
+\noindent \textbf{Understanding What LLMs Are Good At.}
+Given a dataset of inputs and how a target LM performs on these inputs, 
+\citet{sobhani-etal-2025-language, zhong2024explaining, zeng2025evaltree} use LM-based systems to explain categories of inputs where the target LM underperforms.
+
+\section{Future Directions}
+
+\noindent \textbf{Validation Efficiency.}
+Currently, validation is inefficient since we need to call a language model to validate each pair of $\phi$ and $x$.
+It might be possible to borrow ideas from the retrieval literature \cite{khattab2020colbert}, where they first embed $\phi$ and $x$ independently and then perform lightweight pair-wise computation on them.
+
+\noindent \textbf{Proposer Efficiency.}
+We can use the validation score as the reward to train the proposer so that they can directly output better explanations. 
+\citet{choi2024automatic} has explored this approach to better describe neurons, and \citet{chen2024towards} has explored this to propose better self-explanations.
+
+\noindent \textbf{Concepts that Do Not Have Words for Yet.}
+\citet{hewitt2025we} explored this issue in greater details.
+
+
+
+
+
+
+
+\pagebreak
+
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+
+\end{document}
