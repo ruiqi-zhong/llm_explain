@@ -6,8 +6,19 @@ I will make a video tutorial on this topic; stay tuned. This is the library and 
 
 I recommend creating a conda environment with python >= 3.9 to use this package.
 
-1. Run ```pip install -e .``` to install this package.
-2. Set up your openai key in your environment. i.e. ```export OPENAI_API_KEY="[Your OPENAI API KEY]"```
+1. Set up your openai key in your environment. i.e. ```export OPENAI_API_KEY="[Your OPENAI API KEY]"```
+2. Installation
+
+**Option 1**: clone and install locally (for developers)
+- ```git clone git@github.com:ruiqi-zhong/llm_explain.git```
+- ```cd llm_explain```
+- ```pip install -e .```
+
+**Option 2**: install from github repo
+
+```pip3 install --no-cache-dir -v git+https://github.com/ruiqi-zhong/llm_explain.git```
+
+**Option 3**: 
 
 ## Usage
 
