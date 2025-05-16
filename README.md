@@ -1,6 +1,10 @@
 # Scalable Understanding of Datasets and Models with the Help of Large Language Models
 
-I will make a video tutorial on this topic; stay tuned. This is the library and notebooks to help the audience understand my tutorial. 
+I made a video tutorial on this topic [here](https://youtu.be/TEwUkr9n1s8). 
+
+I wrote a thesis on this research direction, and you can see it [here](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2025/EECS-2025-78.pdf). 
+
+This is the library and notebooks to help the audience understand the section 1 of my tutorial.
 
 ## Installation
 
